@@ -1,0 +1,570 @@
+openapi: 3.0.0
+info:
+  description: Sample Flask
+  version: 1.0.0
+  title: Sample Flask
+servers:
+  - url: 'https://filmy-bug.herokuapp.com/'
+    description: heroku
+tags:
+  - name: Movie
+    description: gives information about all the movies in the system
+  - name: Users
+    description: give the list of all the User in the system
+paths:
+  /movies/read_all:
+    get:
+      summary: >-
+        returns the list of movies
+      tags:
+        - Movie
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 200
+                  count:
+                    type: number
+                    example: 10
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: 'Harry Potter'
+                        director:
+                          type: string
+                          example: 'David Yates'
+                        imdb_score:
+                          type: number
+                          example: 67.3
+                        popularity:
+                          type: number
+                          example: 87.2
+  
+  /movies/search:
+    get:
+      summary: >-
+        returns the paginated list of movies based on the query
+      tags:
+        - Movie
+      parameters: 
+        - name: movie_id
+          description: the movie_id(exact) of the movie whos details you want to fetch
+          in: query
+          required: false
+          schema: 
+            type: integer
+            example: 3233
+        - name: name
+          description: the name(exact or substring) of the movie whos details you want to fetch
+          in: query
+          required: false
+          schema: 
+            type: string
+            example: ann
+        - name: director
+          description: the director(exact or substring) of the movie whos details you want to fetch
+          in: query
+          required: false
+          schema: 
+            type: string
+            example: ann
+        - name: imdb_score
+          description: the imdb_score(exact) of the movie whos details you want to fetch
+          in: query
+          required: false
+          schema: 
+            type: integer
+            example: 32.33
+        - name: popularity
+          description: the popularity(exact) of the movie whos details you want to fetch
+          in: query
+          required: false
+          schema: 
+            type: integer
+            example: 32.33
+        - name: limit
+          description: number of documents to be fetched in resultset in on go
+          in: query
+          required: false
+          schema: 
+            type: integer
+            example: 4
+        - name: page
+          description: page to be fetched
+          in: query
+          required: false
+          schema: 
+            type: integer
+            example: 4
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 200
+                  count:
+                    type: number
+                    example: 10
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: 'Harry Potter'
+                        director:
+                          type: string
+                          example: 'David Yates'
+                        imdb_score:
+                          type: number
+                          example: 67.3
+                        popularity:
+                          type: number
+                          example: 87.2
+                        movie_id:
+                          type: number
+                          example: 2
+        400:
+          description: Bad  request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    example: limit should be greated than 0
+                  statusCode:
+                    type: number
+                    example: 400
+          
+  /movies/add_one:
+    post:
+      summary: >-
+        add a new movie to db. Only admin user can perform this task
+      tags:
+        - Movie
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'Harry Potter'
+                director:
+                  type: string
+                  example: 'David Yates'
+                imdb_score:
+                  type: number
+                  example: 67.3
+                popularity:
+                  type: number
+                  example: 87.2
+                movie_id:
+                  type: number
+                  example: 2
+                user_id:
+                  type: number
+                  example: 3
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: 
+                    type: string
+                    example: 'Successfully inserted record.'
+                  statusCode:
+                    type: number
+                    example: 200
+        500:
+          description: Insert Failes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage: 
+                    type: string
+                    example: 'Database insertion failed'
+                  statusCode:
+                    type: number
+                    example: 500
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage: 
+                    type: string
+                    example: 'POST data must have name, popularity, director and imdb_score'
+                  statusCode:
+                    type: number
+                    example: 400
+        
+  /movies/update_one:
+    post:
+      summary: >-
+        update a movie to db. Only admin user can perform this task
+      tags:
+        - Movie
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'Harry Potter'
+                director:
+                  type: string
+                  example: 'David Yates'
+                imdb_score:
+                  type: number
+                  example: 67.3
+                popularity:
+                  type: number
+                  example: 87.2
+                movie_id:
+                  type: number
+                  example: 2
+                user_id:
+                  type: number
+                  example: 3
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: 
+                    type: string
+                    example: 'Successfully updated record.'
+                  statusCode:
+                    type: number
+                    example: 200
+        500:
+          description: Insert Failes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage: 
+                    type: string
+                    example: 'Database update failed'
+                  statusCode:
+                    type: number
+                    example: 500
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage: 
+                    type: string
+                    example: 'Movie ID required for update'
+                  statusCode:
+                    type: number
+                    example: 400
+                    
+
+  /users/read_all:
+    get:
+      summary: >-
+        returns the list of users
+      tags:
+        - Users
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 200
+                  count:
+                    type: number
+                    example: 10
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: 'Harry Potter'
+                        email:
+                          type: string
+                          example: 'harry@gmail.com'
+                        isadmin:
+                          type: boolean
+                          example: 1
+                        user_id:
+                          type: number
+                          example: 1
+  
+  /users/search:
+    get:
+      summary: >-
+        returns the paginated list of users based on the query
+      tags:
+        - Users
+      parameters: 
+        - name: user_id
+          description: the user_id(exact) of the user whos details you want to fetch
+          in: query
+          required: false
+          schema: 
+            type: integer
+            example: 3233
+        - name: name
+          description: the name(exact or substring) of the user whos details you want to fetch
+          in: query
+          required: false
+          schema: 
+            type: string
+            example: ann
+        - name: email
+          description: the email(exact or substring) of the user whos details you want to fetch
+          in: query
+          required: false
+          schema: 
+            type: string
+            example: ann
+        - name: isadmin
+          description: returns list of admin users 
+          in: query
+          required: false
+          schema: 
+            type: boolean
+            example: 1
+        - name: limit
+          description: number of documents to be fetched in resultset in on go
+          in: query
+          required: false
+          schema: 
+            type: integer
+            example: 4
+        - name: page
+          description: page to be fetched
+          in: query
+          required: false
+          schema: 
+            type: integer
+            example: 4
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                    example: 200
+                  count:
+                    type: number
+                    example: 10
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: 'Harry Potter'
+                        email:
+                          type: string
+                          example: 'harry@gmail.com'
+                        isadmin:
+                          type: boolean
+                          example: 1
+                        user_id:
+                          type: number
+                          example: 1
+        400:
+          description: Bad  request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage:
+                    type: string
+                    example: limit should be greated than 0
+                  statusCode:
+                    type: number
+                    example: 400
+          
+  /users/add_one:
+    post:
+      summary: >-
+        add a new users to db.
+      tags:
+        - Users
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'Harry Potter'
+                email:
+                  type: string
+                  example: 'harry@gmail.com'
+                isadmin:
+                  type: boolean
+                  example: 1
+                user_id:
+                  type: number
+                  example: 1
+                movie_id:
+                  type: number
+                  example: 2
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: 
+                    type: string
+                    example: 'Successfully inserted record.'
+                  statusCode:
+                    type: number
+                    example: 200
+        500:
+          description: Insert Failes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage: 
+                    type: string
+                    example: 'Database insertion failed'
+                  statusCode:
+                    type: number
+                    example: 500
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage: 
+                    type: string
+                    example: 'POST data must have name and email'
+                  statusCode:
+                    type: number
+                    example: 400
+        
+  /users/update_one:
+    post:
+      summary: >-
+        update a movie to db. Only admin user can perform this task
+      tags:
+        - Users
+      requestBody:
+        required: True
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 'Harry Potter'
+                email:
+                  type: string
+                  example: 'harry@gmail.com'
+                isadmin:
+                  type: boolean
+                  example: 1
+                user_id:
+                  type: number
+                  example: 1
+                movie_id:
+                  type: number
+                  example: 2
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: 
+                    type: string
+                    example: 'Successfully updated record.'
+                  statusCode:
+                    type: number
+                    example: 200
+        500:
+          description: Insert Failes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage: 
+                    type: string
+                    example: 'Database update failed'
+                  statusCode:
+                    type: number
+                    example: 500
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorMessage: 
+                    type: string
+                    example: 'User ID required for update'
+                  statusCode:
+                    type: number
+                    example: 400                    
