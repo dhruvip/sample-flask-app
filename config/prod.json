@@ -1,6 +1,7 @@
 {
-    "imdb_db": {
-        "sqlite_path" : "why not"
+    "db": {
+        "sqlite_path" : "seed",
+        "schema_file": "schema.sql"
     },
 
     "web_server": {

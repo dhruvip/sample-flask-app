@@ -2,8 +2,10 @@ from flask import Flask, g, jsonify
 import logging
 import os
 import json
-from flask_cors import CORS
-from controller import home_controller
+# from flask_cors import CORS
+from controller import home_controller, movie_controller
+import sqlite3
+from common import SqlConnector, setup_custom_logger, ConnectorFactory
 
 app = Flask(__name__)
 
@@ -13,8 +15,80 @@ CONFIG_FILE_PATH = './config/{}.json'.format(env_type)
 print('Config path : {}'.format(CONFIG_FILE_PATH))
 CONFIG = json.load(open(CONFIG_FILE_PATH))
 
-logging.debug('Registering the routes: ')
-app.register_blueprint(home_controller)
+logger = setup_custom_logger('sample-flask-app')
+
+logger.debug('Registering the routes: ')
+app.register_blueprint(home_controller, url_prefix='/')
+app.register_blueprint(movie_controller, url_prefix='/movies')
+
+DATABASE = './config/{}.db'.format(CONFIG['db']['sqlite_path'])
+
+with app.app_context():
+    conn_fac = ConnectorFactory(CONFIG)
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
+
+SCHEMA_FILE = './config/{}'.format(CONFIG['db']['schema_file'])
+
+@app.route('/initdb')
+def init_db():
+    with app.app_context():
+        db = get_db()
+        with app.open_resource(SCHEMA_FILE, mode='r') as f:
+            db.cursor().executescript(f.read())
+        db.commit()
+        return jsonify({'message': 'database init successfull'})
+
+@app.route('/seeddb')
+def seed_db():
+    with app.app_context():
+        sqliteConnection = get_db()
+        movies_seed = json.load(open('./config/movie_seed.json'))
+        movies_seed = list(map(lambda x: (x['name'],x['99popularity'],x['director'],x['imdb_score']),movies_seed))
+        movies = ', '.join(str(k) for k in movies_seed)
+
+        try:
+            cursor = sqliteConnection.cursor()
+            print("Successfully Connected to SQLite")
+
+            sqlite_insert_query = """INSERT INTO `movies`
+                                ('name', 'popularity', 'director', 'imdb_score') 
+                                VALUES {}"""
+            sqlite_insert_query = sqlite_insert_query.format(movies)
+            count = cursor.execute(sqlite_insert_query)
+            sqliteConnection.commit()
+            print("Record inserted successfully into Movies table ", cursor.rowcount)
+            cursor.close()
+            return jsonify({'message':'Successfully Seeded database'})
+        except sqlite3.Error as error:
+            print("Failed to insert data into sqlite table", error)
+            return jsonify({'message':'Failed to insert data into sqlite table'+str(error)})
+        finally:
+            if (sqliteConnection):
+                sqliteConnection.close()
+                print("The SQLite connection is closed")
+
+@app.route('/dropdb')
+def drop_tables():
+    qry = '''
+        DROP TABLE IF EXISTS Movies;
+        DROP TABLE IF EXISTS Users;
+    '''
+    with app.app_context():
+        db = get_db()
+        db.cursor().executescript(qry)
+        db.commit()
+    return jsonify({'message':'Successfully dropped database'})
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
 
 if __name__ == '__main__':
     app.app_config = CONFIG
