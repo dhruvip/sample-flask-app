@@ -2,12 +2,14 @@ from flask import Flask, g, jsonify
 import logging
 import os
 import json
-# from flask_cors import CORS
 from controller import home_controller, movie_controller
 import sqlite3
 from common import SqlConnector, setup_custom_logger, ConnectorFactory
+from werkzeug.contrib.fixers import ProxyFix
+
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app)
 
 env_type = os.environ.get('API_APP_ENV','dev')
 print('using environment : {}'.format(env_type))
