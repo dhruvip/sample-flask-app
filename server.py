@@ -2,7 +2,7 @@ from flask import Flask, g, jsonify
 import logging
 import os
 import json
-from controller import home_controller, movie_controller
+from controller import home_controller, movie_controller,user_controller
 import sqlite3
 from common import SqlConnector, setup_custom_logger, ConnectorFactory
 from werkzeug.contrib.fixers import ProxyFix
@@ -22,6 +22,8 @@ logger = setup_custom_logger('sample-flask-app')
 logger.debug('Registering the routes: ')
 app.register_blueprint(home_controller, url_prefix='/')
 app.register_blueprint(movie_controller, url_prefix='/movies')
+app.register_blueprint(user_controller, url_prefix='/users')
+
 
 DATABASE = './config/{}.db'.format(CONFIG['db']['sqlite_path'])
 
@@ -53,6 +55,10 @@ def seed_db():
         movies_seed = list(map(lambda x: (x['name'],x['99popularity'],x['director'],x['imdb_score']),movies_seed))
         movies = ', '.join(str(k) for k in movies_seed)
 
+        user_seed = json.load(open('./config/user_seed.json'))
+        user_seed = list(map(lambda x: (x['name'],x['email'],x['isadmin']),user_seed))
+        users = ', '.join(str(k) for k in user_seed)
+
         try:
             cursor = sqliteConnection.cursor()
             print("Successfully Connected to SQLite")
@@ -63,7 +69,14 @@ def seed_db():
             sqlite_insert_query = sqlite_insert_query.format(movies)
             count = cursor.execute(sqlite_insert_query)
             sqliteConnection.commit()
-            print("Record inserted successfully into Movies table ", cursor.rowcount)
+
+            sqlite_insert_query = """INSERT INTO `users`
+                                ('name', 'email', 'isadmin') 
+                                VALUES {}"""
+            sqlite_insert_query = sqlite_insert_query.format(users)
+            count = cursor.execute(sqlite_insert_query)
+            sqliteConnection.commit()            
+            print("Record inserted successfully into tables movies and users")
             cursor.close()
             return jsonify({'message':'Successfully Seeded database'})
         except sqlite3.Error as error:

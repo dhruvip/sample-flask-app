@@ -1,28 +1,12 @@
 from flask import Blueprint, jsonify, request
-from common import ConnectorFactory
+from common import ConnectorFactory,generate_data_response, \
+    generate_error, generate_response
 import logging
 movie_controller = Blueprint('movies', __name__,)
 
 logger = logging.getLogger('sample-flask-app')
 
-def generate_data_response(data, status_code):
-    return {
-        'statusCode': str(status_code),
-        'data': data,
-        'count': len(data)                                                                                                                                                                                                             
-    }
 
-def generate_response(message, status_code):
-    return {
-        'statusCode': str(status_code),
-        'message': message                                                                                                                                                                                                           
-    }
-
-def generate_error(err_msg, status_code):
-    return {
-        'statusCode': str(status_code),
-        'errorMessage': err_msg
-    }
 @movie_controller.route('/read_all')
 def read_movies_table():
     conn_fac = ConnectorFactory()
@@ -41,18 +25,32 @@ def paginated_read():
         'page': request.args.get('page'),
         'limit': request.args.get('limit'),
         'name':  request.args.get('name'),
-        'director': request.args.get('director')
+        'director': request.args.get('director'),
+        'movie_id': request.args.get('movie_id'),
+        'imdb_score':request.args.get('imdb_score')
     }
     payload = {k:v for k,v in payload.items() if v is not None}
 
     qry = "select * from movies "
-
-    if all (k in payload for k in ['name','director']):
-        qry += "where name like '%{}%' and director like '%{}% ".format(payload['name'],payload['director'])
-    elif 'name' in payload:
-        qry +="where name like '%{}%' ".format(payload['name'])
-    elif 'director' in payload:
-        qry +="where director like '%{}%' ".format(payload['director'])
+    where_list = list()
+    if 'movie_id' in payload:
+        q = " movie_id={} ".format(payload['movie_id'])
+        where_list.append(q)
+    if 'name' in payload:
+        q= " name like '%{}%' ".format(payload['name'])
+        where_list.append(q)
+    if 'director' in payload:
+        q =" director like '%{}%' ".format(payload['director'])
+        where_list.append(q)
+    if 'imdb_score' in payload:
+        q =" imdb_score={} ".format(payload['imdb_score'])
+        where_list.append(q)
+    if len(where_list) > 1:
+        where_list = 'and'.join(k for k in where_list)
+        qry = qry + 'where ' + where_list
+    elif len(where_list)==1:
+        qry = qry + 'where ' + where_list[0]
+    
     if 'limit' in payload:
         limit = payload['limit'] if (int(payload['limit']) > 0) else 0
         if limit == 0:
@@ -72,13 +70,26 @@ def paginated_read():
 
 @movie_controller.route('/add_one', methods=['POST'])
 def add_new_movie():
-    payload = request.get_json()    
+    payload = request.get_json() 
+    # if not ('user_id' in payload):
+    #     response = generate_error('User ID required for update',400)
+    #     return jsonify(response)    
     conn_fac = ConnectorFactory()
     db_conn = conn_fac.make_db_connector()
     if not all (k in payload for k in ['name','popularity','director','imdb_score']):
         response = generate_error('POST data must have name, popularity, director and imdb_score',400)
         return jsonify(response)
     else:
+
+        #Check if admin
+        # user_qry = '''
+        #     select isadmin from users where user_id={}
+        # '''.format(payload['user_id'])
+        # check_admin = db_conn.select(user_qry)
+        # if not check_admin[0][0]:
+        #     return jsonify(generate_error('Unauthorized to update!', 401))
+
+        # Insert 
         qry = """INSERT INTO `Movies`
                                 ('name', 'popularity', 'director', 'imdb_score') 
                                 VALUES {}"""
@@ -90,4 +101,43 @@ def add_new_movie():
         else: 
             return generate_error('Database insertion failed',500)
 
+@movie_controller.route('update_one', methods=['POST'])
+def update_movie():
+    payload = request.get_json()
+    # if not ('user_id' in payload):
+    #     response = generate_error('User ID required for update',400)
+    #     return jsonify(response)    
+    if not ('movie_id' in payload):
+        response = generate_error('Movie ID required for update',400)
+        return jsonify(response)
 
+    conn_fac = ConnectorFactory()
+    db_conn = conn_fac.make_db_connector()
+    #Check if admin
+    # user_qry = '''
+    #     select isadmin from users where user_id={}
+    # '''.format(payload['user_id'])
+    # check_admin = db_conn.select(user_qry)
+    # if not check_admin[0][0]:
+    #     return jsonify(generate_error('Unauthorized to update!', 401))
+
+    # Update 
+    conn_fac = ConnectorFactory()
+    db_conn = conn_fac.make_db_connector()
+    update_qry = "update movies set "
+    update_list = list()
+    if 'name' in payload:
+        update_list.append(str('name') + "='" + str(payload['name']) +"'")
+    if 'popularity' in payload:
+        update_list.append(str('popularity') + "=" + str(payload['popularity']))  
+    if 'director' in payload:      
+        update_list.append(str('director') + "='" + str(payload['director'])+"'")
+    if 'imdb_score' in payload:      
+        update_list.append(str('imdb_score') + "=" + str(payload['imdb_score']))
+    update_qry = update_qry +  ', '.join(k for k in update_list)
+    update_qry += " where movie_id={}".format(int(payload['movie_id']))
+    res_code = db_conn.update(update_qry)
+    if res_code:
+        return generate_response('Successfully updated record.',200)
+    else: 
+        return generate_error('Database record update failed',500)

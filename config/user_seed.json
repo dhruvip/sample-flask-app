@@ -1,0 +1,9 @@
+[{
+    "name": "adminuser1",
+    "email": "admin1@mail.com",
+    "isadmin": 1
+},{
+    "name": "nonadminuser1",
+    "email": "nonadminuser1@mail.com",
+    "isadmin": 0
+}]

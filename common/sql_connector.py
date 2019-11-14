@@ -104,3 +104,25 @@ class SqlConnector:
             if (sqliteConnection):
                 sqliteConnection.close()
                 logger.debug("The SQLite connection is closed")
+
+
+    def update(self, query_str):
+        try:
+            sqliteConnection = SqlConnector.get_db_conn(self.config)
+            cursor = sqliteConnection.cursor()
+            logger.debug("Connected to SQLite")
+
+            sqlite_insert_query = query_str
+            count = cursor.execute(sqlite_insert_query)
+            sqliteConnection.commit()
+            logger.debug("Record updated successfully ")
+            cursor.close()
+            return True
+
+        except sqlite3.Error as error:
+            logger.debug("Failed to update data into sqlite table", error)
+            return False
+        finally:
+            if (sqliteConnection):
+                sqliteConnection.close()
+                logger.debug("The SQLite connection is closed")
